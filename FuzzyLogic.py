@@ -66,6 +66,59 @@ class FuzzyLogic:
     def infer(self):
         pass
 
+    """
+    defuzz
+    double numerator = 0, denominator = 0, result = 0;
+        for (int i=0 ; i<outputMemberships.size() ; i++) {
+            numerator += outputMemberships.get(i) * centroids.get(i);
+            denominator += outputMemberships.get(i);
+        }
+        result = numerator / denominator;
+        System.out.println("Defuzzification => done");
+        System.out.println(result);
+    """
+    """
+    infer
+      for (Rule rule: rules) {
+            double membership = 0;
+
+            if(rule.operators.size() == 0){
+                Variable variable = rule.variables.get(0);
+                membership = variable.getMembership(rule.memberships.get(0));
+            }
+
+            for (int i = 0; i < rule.operators.size(); i++) {
+                Variable variable1 = getVariable(rule.variables.get(i).getName());
+                Variable variable2 = getVariable(rule.variables.get(i + 1).getName());
+
+                membership = switch (rule.operators.get(i)) {
+                    case "or" -> Math.max(variable1.getMembership(rule.memberships.get(i)),
+                            variable2.getMembership(rule.memberships.get(i + 1)));
+                    case "and" -> Math.min(variable1.getMembership(rule.memberships.get(i)),
+                            variable2.getMembership(rule.memberships.get(i + 1)));
+                    case "or_not" -> Math.max(variable1.getMembership(rule.memberships.get(i)),
+                            1 - variable2.getMembership(rule.memberships.get(i + 1)));
+                    case "and_not" -> Math.min(variable1.getMembership(rule.memberships.get(i)),
+                            1 - variable2.getMembership(rule.memberships.get(i + 1)));
+                    default -> membership;
+                };
+            }
+
+            Variable outputVariable = getVariable(rule.getOutVariable());
+            for (FuzzySet set: outputVariable.getFuzzySets()) {
+                if(set.getName().equals(rule.getOutSet())){
+                    centroids.add(set.getCentroid());
+                }
+            }
+
+            outputMemberships.add(membership);
+            outputSets.add(rule.outVariable);
+
+
+
+        }
+        System.out.println("Inference => done");
+    """
     def deffuzify(self):
         pass
 
