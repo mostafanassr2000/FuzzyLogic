@@ -30,13 +30,6 @@ def addVariables():
     else:
         mainMenu()
 
-    """
-    proj_funding IN [0, 100]
-    exp_level IN [0, 60]
-    risk OUT [0, 100]
-    x
-    """
-
 def addFuzzySets(varName):
     print("Enter the fuzzy set name, type (TRI/TRAP) and values: (Press x to finish)")
     setLine = input()
@@ -93,14 +86,6 @@ def addRules():
         print(fuzzyLogic.getRules())
         mainMenu()
 
-"""
-proj_funding high or exp_level expert => risk low
-proj_funding medium and exp_level intermediate => risk normal
-proj_funding medium and exp_level beginner => risk normal
-proj_funding low and exp_level beginner => risk high
-proj_funding very_low and_not exp_level expert => risk high
-"""
-
 def runSimulation():
     if not(fuzzyLogic.canRunSimulation()):
         print("CAN’T START THE SIMULATION! Please add the fuzzy sets and rules first.")
@@ -114,12 +99,10 @@ def runSimulation():
             varCrispValue = input(f"{var['name']}: ")
             var['crispValue'] = int(varCrispValue)
 
-    #print(fuzzyLogic.variables)
     print("Running the simulation…")
-    fuzzyLogic.runSimulation()
+    print(fuzzyLogic.runSimulation())
+    mainMenu()
     
-
-
 # main menu
 def mainMenu():
     print("Main Menu:")
@@ -128,9 +111,8 @@ def mainMenu():
     print("2- Add fuzzy sets to an existing variable.")
     print("3- Add rules.")
     print("4- Run the simulation on crisp values.")
-    print("5- Back")
-    print("6- Print Vars")
-    print("7- add all")
+    print("5- Add inputs from data file")
+    print("6- Back")
     choice = input()
     
     match choice:
@@ -143,17 +125,14 @@ def mainMenu():
         case '4':
             runSimulation()
         case '5':
-            toolbox()
-        case '6':
-            print(fuzzyLogic.getAllVariables())
-            mainMenu()
-        case '7':
             addAll(fuzzyLogic)
             print("Variables: ")
             print(fuzzyLogic.getAllVariables())
             print("Rules: ")
             print(fuzzyLogic.getRules())
             mainMenu()
+        case '6':
+            toolbox()
         case 'Close':
             toolbox()
         case _:

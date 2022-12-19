@@ -9,6 +9,8 @@ class FuzzyLogic:
     memberships = []
 
     currVarIndex = None
+    finalResult = None
+    outputMessage = ""
 
     # constructor
     def __init__(self, name='', description=''):
@@ -31,12 +33,9 @@ class FuzzyLogic:
 
     def runSimulation(self):
         if (self.fuzzify()): print("Fuzzification => done")
-        #print(self.variables)
         if (self.infer()): print("Inference => done")
-        print("centroids:", self.centroids)
-        print("memberships:", self.memberships)
-        if (self.deffuzify()): print("Defuzzification => done")
-
+        if (self.deffuzify()): print("Defuzzification => done\n")
+        return self.getOutputMessage(self.finalResult)
 
     def fuzzify(self):
         # loop over variables
@@ -61,9 +60,9 @@ class FuzzyLogic:
                         if (crispValue > set['value'][i] and crispValue < set['value'][i+1]):
                             # points to calc the slop
                             x1 = set['value'][i]
-                            y1 = self.getMiddleValue(i, set['value'])
+                            y1 = self.getMiddleValue(i, set['type'])
                             x2 = set['value'][i+1]
-                            y2 = self.getMiddleValue(i+1, set['value'])
+                            y2 = self.getMiddleValue(i+1, set['type'])
                         #if no range found
                         if (x1 == y1 == x2 == y2 == None): set['membership'] = 0
                         else:
@@ -107,77 +106,21 @@ class FuzzyLogic:
 
             result_var = self.variables[var_index_3]
             result_set = result_var['sets'][set_index_3]
-            #set_membership_2 = result_set['membership']
             self.centroids.append(self.calcCentroid(result_set))
             self.memberships.append(memebership)
-            return True
+        return True
 
-            # add output sets
     def deffuzify(self):
         numerator = 0 
-        denominator = 0, 
+        denominator = 0
         result = 0
         for i in range(len(self.memberships)):
-            numerator += self.memberships[i] * self.centroids[i]
+            numerator += (self.memberships[i] * self.centroids[i])
             denominator += self.memberships[i]
         
-        result = numerator / denominator
+        self.finalResult = numerator / denominator
+        return True
 
-
-    """
-    defuzz
-    double numerator = 0, denominator = 0, result = 0;
-        for (int i=0 ; i<outputMemberships.size() ; i++) {
-            numerator += outputMemberships.get(i) * centroids.get(i);
-            denominator += outputMemberships.get(i);
-        }
-        result = numerator / denominator;
-        System.out.println("Defuzzification => done");
-        System.out.println(result);
-    """
-    """
-    infer
-      for (Rule rule: rules) {
-            double membership = 0;
-
-            if(rule.operators.size() == 0){
-                Variable variable = rule.variables.get(0);
-                membership = variable.getMembership(rule.memberships.get(0));
-            }
-
-            for (int i = 0; i < rule.operators.size(); i++) {
-                Variable variable1 = getVariable(rule.variables.get(i).getName());
-                Variable variable2 = getVariable(rule.variables.get(i + 1).getName());
-
-                membership = switch (rule.operators.get(i)) {
-                    case "or" -> Math.max(variable1.getMembership(rule.memberships.get(i)),
-                            variable2.getMembership(rule.memberships.get(i + 1)));
-                    case "and" -> Math.min(variable1.getMembership(rule.memberships.get(i)),
-                            variable2.getMembership(rule.memberships.get(i + 1)));
-
-                    case "or_not" -> Math.max(variable1.getMembership(rule.memberships.get(i)),
-                            1 - variable2.getMembership(rule.memberships.get(i + 1)));
-                    case "and_not" -> Math.min(variable1.getMembership(rule.memberships.get(i)),
-                            1 - variable2.getMembership(rule.memberships.get(i + 1)));
-                    default -> membership;
-                };
-            }
-
-            Variable outputVariable = getVariable(rule.getOutVariable());
-            for (FuzzySet set: outputVariable.getFuzzySets()) {
-                if(set.getName().equals(rule.getOutSet())){
-                    centroids.add(set.getCentroid());
-                }
-            }
-
-            outputMemberships.add(membership);
-            outputSets.add(rule.outVariable);
-
-
-
-        }
-        System.out.println("Inference => done");
-    """
     def evaluateMembership(self, x1, y1, x2, y2, crisp):
         slope = (y2 - y1)/(x2 - x1)
         x =  x2 if slope < 0 else x1
@@ -190,7 +133,6 @@ class FuzzyLogic:
             return 1 if (index == 1) else 0
         else: # TRAP
             return 1 if (index == 1 or index == 2) else 0
-
 
     def calcCentroid(self, set):
         total = 0
@@ -236,3 +178,7 @@ class FuzzyLogic:
 
     def getRules(self):
         return self.rules
+
+    def getOutputMessage(self, result=0):
+        result = float("{:.2f}".format(result))
+        return f"The predicted risk is normal {result}"
