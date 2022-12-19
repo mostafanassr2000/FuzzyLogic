@@ -4,6 +4,10 @@ class FuzzyLogic:
 
     variables = []  #{'name': 'name', 'type': 'IN', 'crispValue': 50, 'range': ['0', '100'], sets: [{'name': 'name', 'type': 'TRI', 'value': [0, 0, ...]}]}
     rules = []
+
+    centroids = []
+    memberships = []
+
     currVarIndex = None
 
     # constructor
@@ -27,7 +31,10 @@ class FuzzyLogic:
 
     def runSimulation(self):
         if (self.fuzzify()): print("Fuzzification => done")
+        #print(self.variables)
         if (self.infer()): print("Inference => done")
+        print("centroids:", self.centroids)
+        print("memberships:", self.memberships)
         if (self.deffuzify()): print("Defuzzification => done")
 
 
@@ -42,8 +49,9 @@ class FuzzyLogic:
                 try:
                     # if the crisp value in the set values, get the index of that set value
                     index = set['value'].index(crispValue)
-                    # set the membership with the middle value
-                    set['membership'] = self.getMiddleValue(index, set['type'])
+                    if (index != None):
+                        # set the membership with the middle value
+                        set['membership'] = self.getMiddleValue(index, set['type'])
                 except ValueError:
                     # crisp value was not found in the set
                     x1 = y1 = x2 = y2 = None
@@ -56,15 +64,65 @@ class FuzzyLogic:
                             y1 = self.getMiddleValue(i, set['value'])
                             x2 = set['value'][i+1]
                             y2 = self.getMiddleValue(i+1, set['value'])
-                            break
-
-                    #if no range found
-                    if (x1 == y1 == x2 == y2 == None): set['membership'] = 0
-                    else: set['membership'] = self.evaluateMembership(x1, y1, x2, y2, crispValue)
+                        #if no range found
+                        if (x1 == y1 == x2 == y2 == None): set['membership'] = 0
+                        else:
+                            set['membership'] = self.evaluateMembership(x1, y1, x2, y2, crispValue)
         return True
 
     def infer(self):
-        pass
+        for rule in self.rules:
+            memebership = 0
+            # First variable 
+            var_index_1 = rule['condition_1'][0] # index of first variable in the rule
+            set_index_1 = rule['condition_1'][1] # index of the selected set connected to that variable
+
+            variable_1 = self.variables[var_index_1]
+            set_1 = variable_1['sets'][set_index_1]
+            set_membership_1 = set_1['membership']
+
+            # Second variable 
+            var_index_2 = rule['condition_2'][0] # index of second variable in the rule
+            set_index_2 = rule['condition_2'][1] # index of the selected set connected to that variable
+
+            variable_2 = self.variables[var_index_2]
+            set_2 = variable_2['sets'][set_index_2]
+            set_membership_2 = set_2['membership']
+
+            match rule['keyword']:
+                case 'or':
+                    memebership = max(set_membership_1, set_membership_2)
+                case 'and':
+                    memebership = min(set_membership_1, set_membership_2)
+                case 'or_not':
+                    memebership = max(set_membership_1, 1 - set_membership_2)
+                case 'and_not':
+                    memebership = min(set_membership_1, 1 - set_membership_2)
+                case _:
+                    memebership = memebership
+
+            # Result variable 
+            var_index_3 = rule['result'][0] # index of result variable in the rule
+            set_index_3 = rule['result'][1] # index of the selected set connected to that variable
+
+            result_var = self.variables[var_index_3]
+            result_set = result_var['sets'][set_index_3]
+            #set_membership_2 = result_set['membership']
+            self.centroids.append(self.calcCentroid(result_set))
+            self.memberships.append(memebership)
+            return True
+
+            # add output sets
+    def deffuzify(self):
+        numerator = 0 
+        denominator = 0, 
+        result = 0
+        for i in range(len(self.memberships)):
+            numerator += self.memberships[i] * self.centroids[i]
+            denominator += self.memberships[i]
+        
+        result = numerator / denominator
+
 
     """
     defuzz
@@ -96,6 +154,7 @@ class FuzzyLogic:
                             variable2.getMembership(rule.memberships.get(i + 1)));
                     case "and" -> Math.min(variable1.getMembership(rule.memberships.get(i)),
                             variable2.getMembership(rule.memberships.get(i + 1)));
+
                     case "or_not" -> Math.max(variable1.getMembership(rule.memberships.get(i)),
                             1 - variable2.getMembership(rule.memberships.get(i + 1)));
                     case "and_not" -> Math.min(variable1.getMembership(rule.memberships.get(i)),
@@ -119,14 +178,11 @@ class FuzzyLogic:
         }
         System.out.println("Inference => done");
     """
-    def deffuzify(self):
-        pass
-
     def evaluateMembership(self, x1, y1, x2, y2, crisp):
         slope = (y2 - y1)/(x2 - x1)
         x =  x2 if slope < 0 else x1
-        c = -(slope * x)
-        return (slope * crisp) + c
+        intercept = -(slope * x)
+        return (slope * crisp) + intercept
 
     def getMiddleValue(self, index, _type):
         # get the middle value
@@ -134,6 +190,14 @@ class FuzzyLogic:
             return 1 if (index == 1) else 0
         else: # TRAP
             return 1 if (index == 1 or index == 2) else 0
+
+
+    def calcCentroid(self, set):
+        total = 0
+        for val in set['value']:
+            total += val
+        return (total / len(set['value']))
+
 
     # Helper Func #
     def checkVariableName(self, name):
